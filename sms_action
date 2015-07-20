@@ -3,9 +3,12 @@
 use strict;
 use warnings;
 
+use utf8;
+
 use File::Slurp;
-use Data::Dumper;
 use POSIX qw(strftime);
+
+my $reroute = "+380685605573";
 
 my $sender = $ENV{'SMS_1_NUMBER'};
 my $message = $ENV{'SMS_1_TEXT'};
@@ -24,14 +27,19 @@ if ($message eq "ping") {
     $reply = `uptime`;
 } elsif ($message =~ m/^cmd\:\s?(.*?)$/isg) {
     my $cmd = $1;
-    $reply = `$cmd` if $cmd;
+    $reply = `$cmd` if length $cmd;
+} elsif ($message =~ m/^relay\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    $reply = `/usr/local/bin/relay $cmd` if length $cmd;
 } else {
+    $sender = $reroute;
+    $reply = $message;
 }
 
-$reply =~ s{\"}{\\\"}sg if $reply;
+$reply =~ s{\"}{\\\"}sg if length $reply;
 
-write_file( '/var/log/sms.log', { append => 1 }, $reply . "\n") if $reply;
+write_file( '/var/log/sms.log', { append => 1 }, $reply . "\n") if length $reply;
 
-system( "gammu-smsd-inject", "TEXT", $sender, "-text", qq{"$reply"} ) if $reply;
+system( "gammu-smsd-inject", "TEXT", $sender, "-text", qq{"$reply"} ) if length $reply;
 
 exit 0;

@@ -15,8 +15,8 @@
 
 #define DAEMON_NAME		"bwatch-daemon"
 #define PID_FILE		"/var/run/" DAEMON_NAME ".pid"
-#define PIN			0
-#define PIN_STR			"0"
+#define PIN			4
+#define PIN_STR			"4"
 
 void daemon_stop(int signum);
 void button_pressed(void);
@@ -80,9 +80,9 @@ int main(int argc, char *argv[]) {
     }
 
     pinMode(PIN, INPUT);
-    pullUpDnControl(PIN, PUD_DOWN);
+    pullUpDnControl(PIN, PUD_UP);
 
-    if (wiringPiISR(PIN, INT_EDGE_RISING, &button_pressed) == -1) {
+    if (wiringPiISR(PIN, INT_EDGE_FALLING, &button_pressed) == -1) {
        syslog(LOG_ERR, "Unable to set interrupt handler for specified pin, exiting");
        exit(EXIT_FAILURE);
     }
@@ -103,12 +103,12 @@ void button_pressed(void) {
     sleep(2);
 
     switch (digitalRead(PIN)) {
-	case LOW:
+	case HIGH:
 	    syslog(LOG_INFO, "Short connection");
 	    system("/usr/local/bin/bpush_short");
 	    break;
 
-	case HIGH:
+	case LOW:
 	    syslog(LOG_INFO, "Long connection");
 	    system("/usr/local/bin/bpush_long");
 	    break;
