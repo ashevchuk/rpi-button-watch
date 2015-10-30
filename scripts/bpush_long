@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo -n "alert" > /usr/local/etc/rf_message
+
+A=$(cat /usr/local/etc/alert)
+
+if [ "$A" == "0" ]
+then exit 0
+else gammu-smsd-inject TEXT 380685605573 -text "Alarm: `date`"
+fi
+
+#echo -n `date` >> /var/log/button.log
+#echo " Long" >> /var/log/button.log
+
+#gammu-smsd-inject TEXT 380685605573 -text "Alarm: `date`"

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo -n `date` >> /var/log/button.log
+echo " Short" >> /var/log/button.log

@@ -1,0 +1,11 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use utf8;
+
+use File::Slurp;
+use POSIX qw(strftime);
+
+printf ("action: %s\n", $ARGV[0] || "none");
