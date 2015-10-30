@@ -31,6 +31,24 @@ if ($message eq "ping") {
 } elsif ($message =~ m/^relay\:\s?(.*?)$/isg) {
     my $cmd = $1;
     $reply = `/usr/local/bin/relay $cmd` if length $cmd;
+} elsif ($message =~ m/^door\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    $reply = `/usr/local/bin/relay_open` if $cmd eq "open";
+    $reply = `/usr/local/bin/relay_close` if $cmd eq "close";
+} elsif ($message =~ m/^alert\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    write_file('/usr/local/etc/alert', "1") if $cmd eq "on";
+    write_file('/usr/local/etc/alert', "0") if $cmd eq "off";
+    write_file('/usr/local/etc/alert', "1") if $cmd eq "1";
+    write_file('/usr/local/etc/alert', "0") if $cmd eq "0";
+    $reply = read_file('/usr/local/etc/alert');
+} elsif ($message =~ m/^alarm\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    write_file('/usr/local/etc/alert', "1") if $cmd eq "on";
+    write_file('/usr/local/etc/alert', "0") if $cmd eq "off";
+    write_file('/usr/local/etc/alert', "1") if $cmd eq "1";
+    write_file('/usr/local/etc/alert', "0") if $cmd eq "0";
+    $reply = read_file('/usr/local/etc/alert');
 } else {
     $sender = $reroute;
     $reply = $message;
