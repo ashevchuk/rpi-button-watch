@@ -19,6 +19,11 @@ my $log = sprintf("[%s]: %s %s\n", $time, $sender, $message);
 
 write_file( '/var/log/sms.log', { append => 1 }, $log) ;
 
+my $passwd = read_file('/usr/local/etc/passwd');
+my $auth = read_file('/usr/local/etc/auth');
+
+my $allow = index($auth, $sender) != -1;
+
 my $reply;
 
 if ($message eq "ping") {
@@ -27,28 +32,76 @@ if ($message eq "ping") {
     $reply = `uptime`;
 } elsif ($message =~ m/^cmd\:\s?(.*?)$/isg) {
     my $cmd = $1;
-    $reply = `$cmd` if length $cmd;
+    if ( $allow ) {
+	$reply = `$cmd` if length $cmd;
+    } else {
+	$reply = 'nak';
+    }
 } elsif ($message =~ m/^relay\:\s?(.*?)$/isg) {
     my $cmd = $1;
-    $reply = `/usr/local/bin/relay $cmd` if length $cmd;
+    if ( $allow ) {
+	$reply = `/usr/local/bin/relay $cmd` if length $cmd;
+    } else {
+	$reply = 'nak';
+    }
 } elsif ($message =~ m/^door\:\s?(.*?)$/isg) {
     my $cmd = $1;
-    $reply = `/usr/local/bin/relay_open` if $cmd eq "open";
-    $reply = `/usr/local/bin/relay_close` if $cmd eq "close";
+    if ( $allow ) {
+	$reply = `/usr/local/bin/relay_open` if $cmd eq "open";
+	$reply = `/usr/local/bin/relay_close` if $cmd eq "close";
+    } else {
+	$reply = 'nak';
+    }
 } elsif ($message =~ m/^alert\:\s?(.*?)$/isg) {
     my $cmd = $1;
-    write_file('/usr/local/etc/alert', "1") if $cmd eq "on";
-    write_file('/usr/local/etc/alert', "0") if $cmd eq "off";
-    write_file('/usr/local/etc/alert', "1") if $cmd eq "1";
-    write_file('/usr/local/etc/alert', "0") if $cmd eq "0";
-    $reply = read_file('/usr/local/etc/alert');
+    if ( $allow ) {
+	write_file('/usr/local/etc/alert', "1") if $cmd eq "on";
+	write_file('/usr/local/etc/alert', "0") if $cmd eq "off";
+	write_file('/usr/local/etc/alert', "1") if $cmd eq "1";
+	write_file('/usr/local/etc/alert', "0") if $cmd eq "0";
+	$reply = read_file('/usr/local/etc/alert');
+    } else {
+	$reply = 'nak';
+    }
 } elsif ($message =~ m/^alarm\:\s?(.*?)$/isg) {
     my $cmd = $1;
-    write_file('/usr/local/etc/alert', "1") if $cmd eq "on";
-    write_file('/usr/local/etc/alert', "0") if $cmd eq "off";
-    write_file('/usr/local/etc/alert', "1") if $cmd eq "1";
-    write_file('/usr/local/etc/alert', "0") if $cmd eq "0";
-    $reply = read_file('/usr/local/etc/alert');
+    if ( $allow ) {
+	write_file('/usr/local/etc/alert', "1") if $cmd eq "on";
+	write_file('/usr/local/etc/alert', "0") if $cmd eq "off";
+	write_file('/usr/local/etc/alert', "1") if $cmd eq "1";
+	write_file('/usr/local/etc/alert', "0") if $cmd eq "0";
+	$reply = read_file('/usr/local/etc/alert');
+    } else {
+	$reply = 'nak';
+    }
+} elsif ($message =~ m/^auth\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    if ( $cmd eq $passwd ) {
+	$auth .= $sender;
+	write_file('/usr/local/etc/auth', $auth) unless $allow;
+	$reply = 'ack';
+    } else {
+	$reply = 'nak';
+    }
+} elsif ($message =~ m/^admin\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    if ( $allow ) {
+	unless ( index($auth, $cmd) != -1 ) {
+	    $auth .= $cmd;
+	    write_file('/usr/local/etc/auth', $auth);
+	}
+	$reply = 'ack';
+    } else {
+	$reply = 'nak';
+    }
+} elsif ($message =~ m/^passwd\:\s?(.*?)$/isg) {
+    my $cmd = $1;
+    if ( $allow ) {
+	write_file('/usr/local/etc/passwd', $cmd);
+	$reply = 'ack';
+    } else {
+	$reply = 'nak';
+    }
 } else {
     $sender = $reroute;
     $reply = $message;
