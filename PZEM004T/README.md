@@ -55,7 +55,8 @@ Send command: B3 C0 A8 01 01 00 1D
 Reply data: A3 01 86 9F 00 00 C9     
 *Note*: Reply energy data is D1D2D3 = 01 86 9F, converts 01 86 9F to decimal is 99999, so the accumulated power is 99999Wh.   
 
-Using module:
+#####Module usage
+```perl
 use Device::PZEM004T;
 
 my $powerd = new Device::PZEM004T("/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0");
@@ -66,3 +67,4 @@ my $power = $powerd->power;
 my $energy = $powerd->energy;
 
 printf "%sV %sA %sW %sWh\n", $voltage, $current, $power, $energy;
+```
